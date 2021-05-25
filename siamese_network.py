@@ -7,12 +7,12 @@ import Dataset
 import tensorflow as tf
 import numpy as np
 import os
-from sklearn.metrics import confusion_matrix
 from CSiameseNetwork import CSiameseNetwork
 import matplotlib.pyplot as plt
 from CTripletsGenerator import CTripletsGenerator
 from CPlotLatent import CPlotLatent
 import shutil
+import common
 
 DATASET = 'mnist'
 LATENT_ACTIVATION = 'linear'
@@ -97,47 +97,7 @@ for LATENT_SIZE in [8, 32, 128]:
     
     Utils.saveMetrics(history, lambda name: filepath(name))
     ######
-    # K means
-    def testKMeans():
-      from sklearn.cluster import KMeans
-      
-      kmeans = KMeans(n_clusters=N_CLASSES)
-      pred = kmeans.fit_predict(model.latent(X_train))
-      
-      clusterBySize = sorted(
-        list(zip(*np.unique(pred, return_counts=True))),
-        key=lambda x: x[1]
-      )
-    
-      clusters2label = {}
-      knownLabels = []
-      for cluster, _ in clusterBySize:
-        indices = np.where(pred == cluster)
-        Ytrue = Y_train[indices]
-        labels = dict(zip(*np.unique(Ytrue, return_counts=True)))
-        for k in knownLabels:
-          labels[k] = -1
-          
-        label = max(labels, key=labels.get)
-        clusters2label[cluster] = label
-        knownLabels.append(label)
-      # test all data
-      pred = kmeans.predict(model.latent(X_test))
-      relabeled = np.zeros_like(pred)
-      for c, l in clusters2label.items():
-        relabeled[np.where(c == pred)] = l
-      
-      CM = confusion_matrix(Y_test, relabeled)
-      Utils.plot_confusion_matrix(
-        CM,
-        target_names=[str(i) for i in range(N_CLASSES)],
-        saveTo=filepath('confusion_matrix_kmeans.png'),
-        onlyErrors=True,
-        title='KMean'
-      )
-      return
-    
-    testKMeans()
+    common.testLatentKMeansClassification(model, X_train, Y_train, X_test, Y_test, filepath)
     #########################
     # classify by selecting pairs
     def randomAnchors(N):
@@ -147,36 +107,21 @@ for LATENT_SIZE in [8, 32, 128]:
         anchors[label * N:((label + 1) * N)] = X_train[indices]
       return model.latent(anchors)
     
-    def meanAnchors():
-      anchors = []
-      for label in range(N_CLASSES):
-        indices = np.where(Y_train == label)[0]
-        latents = model.latent(X_train[indices])
-        meanLatent = latents.mean(axis=-2)
-        anchors.append(meanLatent)
-      return np.array(anchors)
-    
-    def testAnchors(anchors, N, saveTo, title):  
-      pred_labels = np.zeros_like(Y_test)
-      for i in range(len(X_test)):
-        disimilarity = model.compareOne(anchors, X_test[i:i+1]).numpy()
-        pred_labels[i] = disimilarity.argmin() // N
-        
-      CM = confusion_matrix(Y_test, pred_labels)
-      Utils.plot_confusion_matrix(
-        CM,
-        target_names=[str(i) for i in range(N_CLASSES)],
-        saveTo=saveTo,
-        onlyErrors=True,
-        title=title
-      )
-      return
-    
     for K in [1, 5, 10]:
       print('Test %d-shots classification' % K)
       anchors = randomAnchors(K)
-      testAnchors(anchors, K, saveTo=filepath('confusion_matrix_kshots-%d.png' % K), title='K = %d' % K)
+      common.testClassificationByLatentAnchors(
+        model, anchors, N_CLASSES,
+        X_test, Y_test,
+        saveTo=filepath('confusion_matrix_kshots-%d.png' % K),
+        title='K = %d' % K
+      )
       
     print('Test classification by mean anchors')
-    anchors = meanAnchors()
-    testAnchors(anchors, 1, saveTo=filepath('confusion_matrix_mean.png'), title='Mean anchors')
+    anchors = common.meanLatentAnchors(model, X_train, Y_train)
+    common.testClassificationByLatentAnchors(
+      model, anchors, N_CLASSES,
+      X_test, Y_test,
+      saveTo=filepath('confusion_matrix_mean.png'),
+      title='Mean anchors'
+    )
