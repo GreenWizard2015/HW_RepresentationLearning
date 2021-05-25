@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import math
-import random
 
 class CAEPairsGenerator(tf.keras.utils.Sequence):
   def __init__(self, X, batch_size, noise):
@@ -9,11 +8,17 @@ class CAEPairsGenerator(tf.keras.utils.Sequence):
     self._X = X
     self._batchSize = batch_size
     self._noise = noise
+    self._indices = np.arange(math.ceil(len(X) / batch_size) * batch_size) % len(X)
+    return
+  
+  def on_epoch_end(self):
+    np.random.shuffle(self._indices)
     return
   
   def __getitem__(self, batchIndex):
-    current = (batchIndex * self._batchSize) % len(self._X)
-    samples = self._X[current:current+self._batchSize]
+    current = batchIndex * self._batchSize
+    indices = self._indices[current:current+self._batchSize]
+    samples = self._X[indices]
     if 0 < self._noise:
       corrupted = samples.copy()
       for i, data in enumerate(corrupted):
@@ -25,6 +30,6 @@ class CAEPairsGenerator(tf.keras.utils.Sequence):
       return(corrupted, samples)
     
     return(samples, samples)
-  
+
   def __len__(self):
-      return math.ceil(len(self._X) / self._batchSize)
+    return math.ceil(len(self._X) / self._batchSize)
