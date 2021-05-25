@@ -56,7 +56,7 @@ for LATENT_SIZE in [8, 32, 128]:
       return model
     
     model = CSiameseNetwork(createModel(X_train.shape[1:], latentSize=LATENT_SIZE), LATENT_MARGIN)
-    model.compile(tf.optimizers.Adam(lr=1e-4))
+    model.compile(tf.optimizers.Adam(learning_rate=1e-4))
     model.summary()
     
     def plot_triplets(anchors, positives, negatives):

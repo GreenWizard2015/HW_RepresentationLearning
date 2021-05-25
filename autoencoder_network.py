@@ -103,7 +103,7 @@ def trainAndTest(LATENT_SIZE, NOISE, USE_VAE, LATENT_ACTIVATION):
     encoder=createEncoder(LATENT_SIZE, LATENT_ACTIVATION, VAE=USE_VAE),
     decoder=createDecoder(LATENT_SIZE)
   )
-  model.compile(tf.optimizers.Adam(lr=1e-3), loss='mse')
+  model.compile(tf.optimizers.Adam(learning_rate=1e-3), loss='mse')
   model.summary()
 
   # train
