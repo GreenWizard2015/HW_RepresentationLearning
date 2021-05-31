@@ -30,14 +30,14 @@ def createEncoder(latentSize, latentActivation, VAE=False):
   
   for filters in [16, 32, 64]:
     res = L.Conv2D(filters, 3, padding='same', activation=None)(res)
-    res = L.LeakyReLU(0.1)(res)
+    res = L.LeakyReLU(-0.1)(res)
     res = L.Conv2D(filters, 3, strides=2, activation=None)(res)
-    res = L.LeakyReLU(0.1)(res)
+    res = L.LeakyReLU(-0.1)(res)
     
   res = L.Flatten()(res)
   for sz in [256, 128]:
     res = L.Dense(sz, activation=None)(res)
-    res = L.LeakyReLU(0.1)(res)
+    res = L.LeakyReLU(-0.1)(res)
 
   outputs = None
   if VAE:
@@ -67,21 +67,21 @@ def createDecoder(latentSize):
   
   minSize = (H // 4) * (W // 4)
   res = L.Dense(minSize, activation=None)(res)
-  res = L.LeakyReLU(0.1)(res)
+  res = L.LeakyReLU(-0.1)(res)
   res = L.Reshape((H // 4, W // 4, 1))(res)
   
   res = L.Conv2D(4, 3, activation=None, padding='same')(res)
-  res = L.LeakyReLU(0.1)(res)
+  res = L.LeakyReLU(-0.1)(res)
   res = L.Conv2DTranspose(8, 2, strides=2, activation=None, padding='same')(res)
-  res = L.LeakyReLU(0.1)(res)
+  res = L.LeakyReLU(-0.1)(res)
   
   res = L.Conv2D(16, 3, activation=None, padding='same')(res)
-  res = L.LeakyReLU(0.1)(res)
+  res = L.LeakyReLU(-0.1)(res)
   res = L.Conv2DTranspose(32, 2, strides=2, activation=None, padding='same')(res)
-  res = L.LeakyReLU(0.1)(res)
+  res = L.LeakyReLU(-0.1)(res)
   
   res = L.Conv2D(32, 3, activation=None, padding='same')(res)
-  res = L.LeakyReLU(0.1)(res)
+  res = L.LeakyReLU(-0.1)(res)
   
   res = L.Conv2D(D, 3, activation=None, padding='same')(res)
   model = tf.keras.Model(inputs=[data], outputs=[res])
